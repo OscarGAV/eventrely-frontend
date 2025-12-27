@@ -1,5 +1,5 @@
 import '../../../../core/network/api_client.dart';
-import '../../../../core/constants/api_constants.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../models/event_model.dart';
 
 abstract class EventRemoteDataSource {
@@ -20,7 +20,7 @@ class EventRemoteDataSourceImpl implements EventRemoteDataSource {
   @override
   Future<EventModel> createEvent(EventModel event) async {
     final response = await client.post(
-      ApiConstants.eventsEndpoint,
+      AppConstants.eventsEndpoint,
       event.toJson(),
     );
     return EventModel.fromJson(response);
@@ -29,7 +29,7 @@ class EventRemoteDataSourceImpl implements EventRemoteDataSource {
   @override
   Future<List<EventModel>> getUpcomingEvents(String userId) async {
     final response = await client.get(
-      '${ApiConstants.eventsEndpoint}/user/$userId/upcoming?limit=50',
+      '${AppConstants.eventsEndpoint}/user/$userId/upcoming?limit=50',
     );
     
     final List<dynamic> events = response['events'];
@@ -39,7 +39,7 @@ class EventRemoteDataSourceImpl implements EventRemoteDataSource {
   @override
   Future<EventModel> getEventById(int eventId) async {
     final response = await client.get(
-      '${ApiConstants.eventsEndpoint}/$eventId',
+      '${AppConstants.eventsEndpoint}/$eventId',
     );
     return EventModel.fromJson(response);
   }
@@ -47,7 +47,7 @@ class EventRemoteDataSourceImpl implements EventRemoteDataSource {
   @override
   Future<EventModel> updateEvent(int eventId, EventModel event) async {
     final response = await client.put(
-      '${ApiConstants.eventsEndpoint}/$eventId',
+      '${AppConstants.eventsEndpoint}/$eventId',
       event.toUpdateJson(),
     );
     return EventModel.fromJson(response);
@@ -55,13 +55,13 @@ class EventRemoteDataSourceImpl implements EventRemoteDataSource {
   
   @override
   Future<void> deleteEvent(int eventId) async {
-    await client.delete('${ApiConstants.eventsEndpoint}/$eventId');
+    await client.delete('${AppConstants.eventsEndpoint}/$eventId');
   }
   
   @override
   Future<EventModel> completeEvent(int eventId) async {
     final response = await client.post(
-      '${ApiConstants.eventsEndpoint}/$eventId/complete',
+      '${AppConstants.eventsEndpoint}/$eventId/complete',
       {},
     );
     return EventModel.fromJson(response);
@@ -70,7 +70,7 @@ class EventRemoteDataSourceImpl implements EventRemoteDataSource {
   @override
   Future<EventModel> cancelEvent(int eventId) async {
     final response = await client.post(
-      '${ApiConstants.eventsEndpoint}/$eventId/cancel',
+      '${AppConstants.eventsEndpoint}/$eventId/cancel',
       {},
     );
     return EventModel.fromJson(response);

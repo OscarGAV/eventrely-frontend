@@ -1,21 +1,29 @@
+// app_constants.dart (versión optimizada)
 class AppConstants {
-  // User ID temporal (más adelante se implementará autenticación)
-  static const String userId = 'user_test';
+  // User
+  static const userId = 'user_test';
   
-  // Timezone de Lima, Perú (UTC-5)
-  static const String limaTimezone = 'America/Lima';
-  static const int limaUtcOffset = -5;
+  // Timezone
+  static const limaTimezone = 'America/Lima';
+  static const limaUtcOffset = -5;
   
-  // Recordatorios (minutos antes del evento)
-  static const List<int> reminderMinutes = [
-    360,  // 6 horas
-    180,  // 3 horas
-    60,   // 1 hora
-    15,   // 15 minutos
-  ];
+  // Reminders (minutos antes del evento)
+  static const reminderMinutes = [360, 180, 60, 15];
   
-  // Notificaciones
-  static const String notificationChannelId = 'eventrely_reminders';
-  static const String notificationChannelName = 'Event Reminders';
-  static const String notificationChannelDescription = 'Notifications for upcoming events';
+  // Notifications
+  static const notificationChannelId = 'eventrely_reminders';
+  static const notificationChannelName = 'Event Reminders';
+  static const notificationChannelDescription = 'Notifications for upcoming events';
+  
+  // API
+  static const apiBaseUrl = 'https://eventrely-api-platofrm.azurewebsites.net'; // URL base de la API
+  static const String eventsEndpoint = '/api/v1/events/'; // Endpoint de eventos
+  static const apiTimeout = Duration(seconds: 60); // Tiempo máximo de espera para la respuesta de la API
+  
+  // Headers
+  static Map<String, String> get headers => {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'User-Agent': 'EventRELY-Flutter-App/1.0',
+  };
 }

@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import '../constants/api_constants.dart';
+import '../constants/app_constants.dart';
 import '../error/exceptions.dart';
 import '../utils/app_logger.dart';
 
@@ -13,15 +13,15 @@ class ApiClient {
   
   Future<dynamic> get(String endpoint) async {
     try {
-      final url = '${ApiConstants.baseUrl}$endpoint';
+      final url = '${AppConstants.apiBaseUrl}$endpoint';
       AppLogger.network('GET Request: $url', 'ApiClient');
       
       final response = await client
           .get(
             Uri.parse(url),
-            headers: ApiConstants.headers,
+            headers: AppConstants.headers,
           )
-          .timeout(ApiConstants.timeout);
+          .timeout(AppConstants.apiTimeout);
       
       AppLogger.success('GET Response: ${response.statusCode}', 'ApiClient');
       return _handleResponse(response);
@@ -42,17 +42,17 @@ class ApiClient {
   
   Future<dynamic> post(String endpoint, Map<String, dynamic> body) async {
     try {
-      final url = '${ApiConstants.baseUrl}$endpoint';
+      final url = '${AppConstants.apiBaseUrl}$endpoint';
       AppLogger.network('POST Request: $url', 'ApiClient');
       AppLogger.data('Body: ${jsonEncode(body)}', 'ApiClient');
       
       final response = await client
           .post(
             Uri.parse(url),
-            headers: ApiConstants.headers,
+            headers: AppConstants.headers,
             body: jsonEncode(body),
           )
-          .timeout(ApiConstants.timeout);
+          .timeout(AppConstants.apiTimeout);
       
       AppLogger.success('POST Response: ${response.statusCode}', 'ApiClient');
       AppLogger.response('Response body: ${response.body}', 'ApiClient');
@@ -75,17 +75,17 @@ class ApiClient {
   
   Future<dynamic> put(String endpoint, Map<String, dynamic> body) async {
     try {
-      final url = '${ApiConstants.baseUrl}$endpoint';
+      final url = '${AppConstants.apiBaseUrl}$endpoint';
       AppLogger.network('PUT Request: $url', 'ApiClient');
       AppLogger.data('Body: ${jsonEncode(body)}', 'ApiClient');
       
       final response = await client
           .put(
             Uri.parse(url),
-            headers: ApiConstants.headers,
+            headers: AppConstants.headers,
             body: jsonEncode(body),
           )
-          .timeout(ApiConstants.timeout);
+          .timeout(AppConstants.apiTimeout);
       
       AppLogger.success('PUT Response: ${response.statusCode}', 'ApiClient');
       AppLogger.response('Response body: ${response.body}', 'ApiClient');
@@ -108,15 +108,15 @@ class ApiClient {
   
   Future<void> delete(String endpoint) async {
     try {
-      final url = '${ApiConstants.baseUrl}$endpoint';
+      final url = '${AppConstants.apiBaseUrl}$endpoint';
       AppLogger.network('DELETE Request: $url', 'ApiClient');
       
       final response = await client
           .delete(
             Uri.parse(url),
-            headers: ApiConstants.headers,
+            headers: AppConstants.headers,
           )
-          .timeout(ApiConstants.timeout);
+          .timeout(AppConstants.apiTimeout);
       
       AppLogger.success('DELETE Response: ${response.statusCode}', 'ApiClient');
       

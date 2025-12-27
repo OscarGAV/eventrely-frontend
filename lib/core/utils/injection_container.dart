@@ -1,37 +1,21 @@
+// injection_container.dart
 import 'package:get_it/get_it.dart';
 import 'package:http/http.dart' as http;
-
-import '../network/api_client.dart';
 import '../../features/events/data/datasources/event_remote_datasource.dart';
 import '../../features/events/data/repositories/event_repository_impl.dart';
 import '../../features/events/domain/repositories/event_repository.dart';
-import '../../features/events/domain/usecases/create_event.dart';
-import '../../features/events/domain/usecases/get_upcoming_events.dart';
-import '../../features/events/domain/usecases/update_event.dart';
-import '../../features/events/domain/usecases/delete_event.dart';
-import '../../features/events/domain/usecases/complete_event.dart';
+import '../../features/events/domain/usecases/event_use_cases.dart';
 import '../../features/events/presentation/bloc/event_bloc.dart';
+import '../network/api_client.dart';
 
 final sl = GetIt.instance;
 
 Future<void> init() async {
   // BLoC
-  sl.registerFactory(
-    () => EventBloc(
-      getUpcomingEvents: sl(),
-      createEvent: sl(),
-      updateEvent: sl(),
-      deleteEvent: sl(),
-      completeEvent: sl(),
-    ),
-  );
+  sl.registerFactory(() => EventBloc(useCases: sl()));
   
-  // Use Cases
-  sl.registerLazySingleton(() => GetUpcomingEvents(sl()));
-  sl.registerLazySingleton(() => CreateEvent(sl()));
-  sl.registerLazySingleton(() => UpdateEvent(sl()));
-  sl.registerLazySingleton(() => DeleteEvent(sl()));
-  sl.registerLazySingleton(() => CompleteEvent(sl()));
+  // Use Cases (ahora es uno solo)
+  sl.registerLazySingleton(() => EventUseCases(sl()));
   
   // Repository
   sl.registerLazySingleton<EventRepository>(
