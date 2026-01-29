@@ -45,5 +45,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Voice Recognition Permissions -->
+    <key>NSMicrophoneUsageDescription</key>
+    <string>EventRELY necesita acceso al micrófono para crear eventos por voz</string>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>EventRELY necesita acceso al reconocimiento de voz para transcribir tus recordatorios</string>
 </dict>
 </plist>

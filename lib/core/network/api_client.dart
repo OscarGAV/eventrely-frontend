@@ -1,186 +1,124 @@
-import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
-import 'package:http/http.dart' as http;
-import '../constants/app_constants.dart';
-import '../error/exceptions.dart';
-import '../utils/app_logger.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../configuration/app_config.dart';
 
 class ApiClient {
-  final http.Client client;
+  late final Dio _dio;
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
   
-  ApiClient({required this.client});
+  static const String _accessTokenKey = 'access_token';
+  static const String _refreshTokenKey = 'refresh_token';
   
-  Future<dynamic> get(String endpoint) async {
-    try {
-      final url = '${AppConstants.apiBaseUrl}$endpoint';
-      AppLogger.network('GET Request: $url', 'ApiClient');
-      
-      final response = await client
-          .get(
-            Uri.parse(url),
-            headers: AppConstants.headers,
-          )
-          .timeout(AppConstants.apiTimeout);
-      
-      AppLogger.success('GET Response: ${response.statusCode}', 'ApiClient');
-      return _handleResponse(response);
-    } on SocketException catch (e, stackTrace) {
-      AppLogger.error('No internet connection', e, stackTrace, 'ApiClient');
-      throw const NetworkException('No internet connection. Please check your network settings.');
-    } on http.ClientException catch (e, stackTrace) {
-      AppLogger.error('Client exception', e, stackTrace, 'ApiClient');
-      throw NetworkException('Connection error: ${e.message}');
-    } on TimeoutException catch (e, stackTrace) {
-      AppLogger.error('Request timeout', e, stackTrace, 'ApiClient');
-      throw const NetworkException('Request timeout. Please try again.');
-    } catch (e, stackTrace) {
-      AppLogger.error('Unexpected error', e, stackTrace, 'ApiClient');
-      throw NetworkException('Unexpected error: $e');
-    }
-  }
-  
-  Future<dynamic> post(String endpoint, Map<String, dynamic> body) async {
-    try {
-      final url = '${AppConstants.apiBaseUrl}$endpoint';
-      AppLogger.network('POST Request: $url', 'ApiClient');
-      AppLogger.data('Body: ${jsonEncode(body)}', 'ApiClient');
-      
-      final response = await client
-          .post(
-            Uri.parse(url),
-            headers: AppConstants.headers,
-            body: jsonEncode(body),
-          )
-          .timeout(AppConstants.apiTimeout);
-      
-      AppLogger.success('POST Response: ${response.statusCode}', 'ApiClient');
-      AppLogger.response('Response body: ${response.body}', 'ApiClient');
-      
-      return _handleResponse(response);
-    } on SocketException catch (e, stackTrace) {
-      AppLogger.error('No internet connection', e, stackTrace, 'ApiClient');
-      throw const NetworkException('No internet connection. Please check your network settings.');
-    } on http.ClientException catch (e, stackTrace) {
-      AppLogger.error('Client exception', e, stackTrace, 'ApiClient');
-      throw NetworkException('Connection error: ${e.message}');
-    } on TimeoutException catch (e, stackTrace) {
-      AppLogger.error('Request timeout', e, stackTrace, 'ApiClient');
-      throw const NetworkException('Request timeout. Please try again.');
-    } catch (e, stackTrace) {
-      AppLogger.error('Unexpected error', e, stackTrace, 'ApiClient');
-      throw NetworkException('Unexpected error: $e');
-    }
-  }
-  
-  Future<dynamic> put(String endpoint, Map<String, dynamic> body) async {
-    try {
-      final url = '${AppConstants.apiBaseUrl}$endpoint';
-      AppLogger.network('PUT Request: $url', 'ApiClient');
-      AppLogger.data('Body: ${jsonEncode(body)}', 'ApiClient');
-      
-      final response = await client
-          .put(
-            Uri.parse(url),
-            headers: AppConstants.headers,
-            body: jsonEncode(body),
-          )
-          .timeout(AppConstants.apiTimeout);
-      
-      AppLogger.success('PUT Response: ${response.statusCode}', 'ApiClient');
-      AppLogger.response('Response body: ${response.body}', 'ApiClient');
-      
-      return _handleResponse(response);
-    } on SocketException catch (e, stackTrace) {
-      AppLogger.error('No internet connection', e, stackTrace, 'ApiClient');
-      throw const NetworkException('No internet connection. Please check your network settings.');
-    } on http.ClientException catch (e, stackTrace) {
-      AppLogger.error('Client exception', e, stackTrace, 'ApiClient');
-      throw NetworkException('Connection error: ${e.message}');
-    } on TimeoutException catch (e, stackTrace) {
-      AppLogger.error('Request timeout', e, stackTrace, 'ApiClient');
-      throw const NetworkException('Request timeout. Please try again.');
-    } catch (e, stackTrace) {
-      AppLogger.error('Unexpected error', e, stackTrace, 'ApiClient');
-      throw NetworkException('Unexpected error: $e');
-    }
-  }
-  
-  Future<void> delete(String endpoint) async {
-    try {
-      final url = '${AppConstants.apiBaseUrl}$endpoint';
-      AppLogger.network('DELETE Request: $url', 'ApiClient');
-      
-      final response = await client
-          .delete(
-            Uri.parse(url),
-            headers: AppConstants.headers,
-          )
-          .timeout(AppConstants.apiTimeout);
-      
-      AppLogger.success('DELETE Response: ${response.statusCode}', 'ApiClient');
-      
-      if (response.statusCode != 204 && response.statusCode != 200) {
-        throw ServerException('Failed to delete: ${response.statusCode}');
-      }
-    } on SocketException catch (e, stackTrace) {
-      AppLogger.error('No internet connection', e, stackTrace, 'ApiClient');
-      throw const NetworkException('No internet connection. Please check your network settings.');
-    } on http.ClientException catch (e, stackTrace) {
-      AppLogger.error('Client exception', e, stackTrace, 'ApiClient');
-      throw NetworkException('Connection error: ${e.message}');
-    } on TimeoutException catch (e, stackTrace) {
-      AppLogger.error('Request timeout', e, stackTrace, 'ApiClient');
-      throw const NetworkException('Request timeout. Please try again.');
-    } catch (e, stackTrace) {
-      AppLogger.error('Unexpected error', e, stackTrace, 'ApiClient');
-      throw NetworkException('Unexpected error: $e');
-    }
-  }
-  
-  dynamic _handleResponse(http.Response response) {
-    // Manejo especial para redirecciones
-    if (response.statusCode == 307 || response.statusCode == 308) {
-      AppLogger.warning(
-        'Redirect detected: ${response.statusCode}',
-        'ApiClient'
-      );
-      AppLogger.info(
-        'Location header: ${response.headers['location']}',
-        'ApiClient'
-      );
-      throw const ServerException(
-        'Server redirect detected. Please check the API URL configuration.'
-      );
-    }
+  ApiClient() {
+    _dio = Dio(BaseOptions(
+      baseUrl: AppConfig.baseUrl,
+      connectTimeout: AppConfig.apiTimeout,
+      receiveTimeout: AppConfig.apiTimeout,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    ));
     
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      if (response.body.isEmpty) return null;
-      try {
-        return jsonDecode(response.body);
-      } catch (e, stackTrace) {
-        AppLogger.error('JSON decode error', e, stackTrace, 'ApiClient');
-        AppLogger.response('Raw response: ${response.body}', 'ApiClient');
-        throw const ServerException('Invalid response format');
+    _setupInterceptors();
+  }
+  
+  void _setupInterceptors() {
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          final token = await getAccessToken();
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          return handler.next(options);
+        },
+        onError: (error, handler) async {
+          if (error.response?.statusCode == 401) {
+            // Try to refresh token
+            final refreshed = await _refreshAccessToken();
+            if (refreshed) {
+              // Retry original request
+              final opts = error.requestOptions;
+              final token = await getAccessToken();
+              opts.headers['Authorization'] = 'Bearer $token';
+              try {
+                final response = await _dio.fetch(opts);
+                return handler.resolve(response);
+              } catch (e) {
+                return handler.reject(error);
+              }
+            }
+          }
+          return handler.next(error);
+        },
+      ),
+    );
+  }
+  
+  Future<bool> _refreshAccessToken() async {
+    try {
+      final refreshToken = await getRefreshToken();
+      if (refreshToken == null) return false;
+      
+      final response = await _dio.post('/auth/refresh', data: {
+        'refresh_token': refreshToken,
+      });
+      
+      if (response.statusCode == 200) {
+        final accessToken = response.data['access_token'];
+        await saveAccessToken(accessToken);
+        return true;
       }
-    } else if (response.statusCode == 404) {
-      throw const ServerException('Resource not found');
-    } else if (response.statusCode == 400) {
-      try {
-        final error = jsonDecode(response.body);
-        throw ServerException(error['detail'] ?? 'Bad request');
-      } catch (e) {
-        throw const ServerException('Bad request');
-      }
-    } else {
-      AppLogger.error(
-        'Server error: ${response.statusCode}',
-        null,
-        null,
-        'ApiClient'
-      );
-      AppLogger.response('Response body: ${response.body}', 'ApiClient');
-      throw ServerException('Server error: ${response.statusCode}');
+      return false;
+    } catch (e) {
+      await clearTokens();
+      return false;
     }
+  }
+  
+  // Token Management
+  Future<void> saveTokens(String accessToken, String refreshToken) async {
+    await _storage.write(key: _accessTokenKey, value: accessToken);
+    await _storage.write(key: _refreshTokenKey, value: refreshToken);
+  }
+  
+  Future<void> saveAccessToken(String accessToken) async {
+    await _storage.write(key: _accessTokenKey, value: accessToken);
+  }
+  
+  Future<String?> getAccessToken() async {
+    return await _storage.read(key: _accessTokenKey);
+  }
+  
+  Future<String?> getRefreshToken() async {
+    return await _storage.read(key: _refreshTokenKey);
+  }
+  
+  Future<void> clearTokens() async {
+    await _storage.delete(key: _accessTokenKey);
+    await _storage.delete(key: _refreshTokenKey);
+  }
+  
+  Future<bool> hasValidToken() async {
+    final token = await getAccessToken();
+    return token != null && token.isNotEmpty;
+  }
+  
+  // HTTP Methods
+  Future<Response> get(String path, {Map<String, dynamic>? queryParameters}) {
+    return _dio.get(path, queryParameters: queryParameters);
+  }
+  
+  Future<Response> post(String path, {dynamic data}) {
+    return _dio.post(path, data: data);
+  }
+  
+  Future<Response> put(String path, {dynamic data}) {
+    return _dio.put(path, data: data);
+  }
+  
+  Future<Response> delete(String path) {
+    return _dio.delete(path);
   }
 }

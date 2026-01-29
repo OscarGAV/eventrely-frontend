@@ -12,12 +12,12 @@ android {
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+        jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
     defaultConfig {
@@ -34,10 +34,32 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // Elimina código y recursos no usados
+            isMinifyEnabled = true
+            isShrinkResources = true
+            // Signing config (mantener tu configuración)
             signingConfig = signingConfigs.getByName("debug")
         }
+
+        debug {
+            // Debug sin optimizaciones para desarrollo rápido
+            isMinifyEnabled = false
+            isShrinkResources = false
+        }
+    }
+
+    packagingOptions {
+        // Excluir archivos duplicados que inflan el APK
+        resources.excludes.addAll(listOf(
+            "META-INF/DEPENDENCIES",
+            "META-INF/LICENSE",
+            "META-INF/LICENSE.txt",
+            "META-INF/license.txt",
+            "META-INF/NOTICE",
+            "META-INF/NOTICE.txt",
+            "META-INF/notice.txt",
+            "META-INF/*.kotlin_module"
+        ))
     }
 }
 
