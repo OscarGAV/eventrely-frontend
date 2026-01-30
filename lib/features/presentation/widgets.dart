@@ -247,7 +247,7 @@ class CustomTextField extends StatelessWidget {
 }
 
 // ============================================================================
-// EVENT CARD
+// EVENT CARD - CON SOPORTE PARA onTap
 // ============================================================================
 
 class EventCard extends StatelessWidget {
@@ -346,11 +346,20 @@ class EventCard extends StatelessWidget {
               icon: const Icon(Icons.check_circle_outline),
               color: AppColors.success,
               onPressed: onComplete,
+              tooltip: 'Complete',
             ),
             IconButton(
               icon: const Icon(Icons.delete_outline),
               color: AppColors.error,
               onPressed: onDelete,
+              tooltip: 'Delete',
+            ),
+          ] else if (onTap != null) ...[
+            // Si el evento no es pending pero tiene onTap, mostrar icono de editar
+            const Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: AppColors.textSecondary,
             ),
           ],
         ],
@@ -366,8 +375,10 @@ class EventCard extends StatelessWidget {
       return 'Today ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
     } else if (difference.inDays == 1) {
       return 'Tomorrow ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-    } else if (difference.inDays < 7) {
+    } else if (difference.inDays < 7 && difference.inDays > 0) {
       return '${difference.inDays} days';
+    } else if (difference.inDays < 0 && difference.inDays > -7) {
+      return '${-difference.inDays} days ago';
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }

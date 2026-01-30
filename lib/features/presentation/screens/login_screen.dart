@@ -20,6 +20,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _fullNameController = TextEditingController();
   bool _obscurePassword = true;
   
+  // Variable para controlar si ya mostramos el error
+  String? _lastShownError;
+  
   @override
   void dispose() {
     _usernameController.dispose();
@@ -34,14 +37,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     
     if (_isSignUp) {
       await ref.read(authProvider.notifier).signUp(
-        _usernameController.text,
-        _emailController.text,
+        _usernameController.text.trim(),
+        _emailController.text.trim(),
         _passwordController.text,
-        _fullNameController.text.isEmpty ? null : _fullNameController.text,
+        _fullNameController.text.trim().isEmpty ? null : _fullNameController.text.trim(),
       );
     } else {
       await ref.read(authProvider.notifier).signIn(
-        _usernameController.text,
+        _usernameController.text.trim(),
         _passwordController.text,
       );
     }
@@ -51,17 +54,52 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     
-    // Show error if exists
-    if (authState.error != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(authState.error!),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      });
-    }
+    // Mostrar error solo si es nuevo y no lo hemos mostrado antes
+    ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next.error != null && next.error != _lastShownError) {
+        _lastShownError = next.error;
+        
+        // Mostrar SnackBar con el error
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.white),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        next.error!,
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+                backgroundColor: AppColors.error,
+                duration: const Duration(seconds: 4),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                action: SnackBarAction(
+                  label: 'OK',
+                  textColor: Colors.white,
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  },
+                ),
+              ),
+            );
+          }
+        });
+      }
+      
+      // Limpiar el último error mostrado cuando cambiamos de modo
+      if (previous?.error != null && next.error == null) {
+        _lastShownError = null;
+      }
+    });
     
     return Scaffold(
       body: SafeArea(
@@ -97,6 +135,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 
                 const SizedBox(height: AppSpacing.xl),
                 
+                // Mostrar error persistente (opcional, además del SnackBar)
+                if (authState.error != null && !authState.isLoading) ...[
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.error.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          color: AppColors.error,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            authState.error!,
+                            style: AppTextStyles.bodySecondary.copyWith(
+                              color: AppColors.error,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
+                
                 // Username
                 CustomTextField(
                   controller: _usernameController,
@@ -104,8 +175,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   hint: _isSignUp ? 'Enter username' : 'Enter username or email',
                   keyboardType: TextInputType.text,
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
+                    if (value == null || value.trim().isEmpty) {
                       return 'This field is required';
+                    }
+                    if (_isSignUp && value.trim().length < 3) {
+                      return 'Username must be at least 3 characters';
                     }
                     return null;
                   },
@@ -121,11 +195,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     hint: 'Enter your email',
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
+                      if (value == null || value.trim().isEmpty) {
                         return 'Email is required';
                       }
-                      if (!value.contains('@')) {
-                        return 'Enter a valid email';
+                      // Validación básica de email
+                      final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                      if (!emailRegex.hasMatch(value.trim())) {
+                        return 'Enter a valid email address';
                       }
                       return null;
                     },
@@ -167,6 +243,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     if (_isSignUp && value.length < 8) {
                       return 'Password must be at least 8 characters';
                     }
+                    if (_isSignUp && !RegExp(r'[A-Za-z]').hasMatch(value)) {
+                      return 'Password must contain at least one letter';
+                    }
+                    if (_isSignUp && !RegExp(r'[0-9]').hasMatch(value)) {
+                      return 'Password must contain at least one number';
+                    }
                     return null;
                   },
                 ),
@@ -176,7 +258,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 // Submit Button
                 CustomButton(
                   text: _isSignUp ? 'Sign Up' : 'Sign In',
-                  onPressed: _submit,
+                  onPressed: authState.isLoading ? null : _submit,
                   isLoading: authState.isLoading,
                 ),
                 
@@ -184,11 +266,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 
                 // Toggle Sign In/Sign Up
                 TextButton(
-                  onPressed: () {
+                  onPressed: authState.isLoading ? null : () {
                     setState(() {
                       _isSignUp = !_isSignUp;
                       _formKey.currentState?.reset();
+                      _lastShownError = null; // Reset error tracking
                     });
+                    // Limpiar campos al cambiar
+                    _usernameController.clear();
+                    _passwordController.clear();
+                    _emailController.clear();
+                    _fullNameController.clear();
                   },
                   child: Text(
                     _isSignUp
@@ -197,6 +285,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     style: AppTextStyles.body.copyWith(
                       color: AppColors.primary,
                     ),
+                  ),
+                ),
+                
+                // Version info (opcional)
+                const SizedBox(height: AppSpacing.lg),
+                const Center(
+                  child: Text(
+                    'EventRELY v0.1.0',
+                    style: AppTextStyles.caption,
                   ),
                 ),
               ],

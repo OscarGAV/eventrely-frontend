@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/configuration/app_config.dart';
+import 'core/configuration/app_logger.dart';
 import 'features/presentation/providers.dart';
 import 'features/presentation/screens/login_screen.dart';
 import 'features/presentation/screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize logger
+  logger.initialize(isProduction: false); // Set to true for production builds
+  logger.info('App starting...');
   
   final sharedPreferences = await SharedPreferences.getInstance();
   
