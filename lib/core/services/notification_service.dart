@@ -21,7 +21,13 @@ class NotificationService {
     try {
       // Inicializar timezones
       tz.initializeTimeZones();
-      tz.setLocalLocation(tz.getLocation('America/Lima'));
+      
+      // CRÍTICO: Configurar la zona horaria correcta para Lima, Perú
+      final location = tz.getLocation('America/Lima');
+      tz.setLocalLocation(location);
+      
+      logger.info('NotificationService: Timezone set to ${location.name}');
+      logger.info('NotificationService: Current TZ time: ${tz.TZDateTime.now(location)}');
       
       // Configuración para Android
       const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -48,6 +54,9 @@ class NotificationService {
       
       // Solicitar permisos de alarmas exactas
       await _requestExactAlarmPermission();
+      
+      // Mostrar notificaciones pendientes para debugging
+      await _logPendingNotifications();
       
     } catch (e, stackTrace) {
       logger.error('NotificationService: Error during initialization', e, stackTrace);
@@ -147,14 +156,34 @@ class NotificationService {
   }) async {
     if (!_initialized) await initialize();
     
+    logger.info('═══════════════════════════════════════════════════════════');
+    logger.info('📅 SCHEDULING NOTIFICATIONS FOR EVENT $eventId');
+    logger.info('   Title: "$title"');
+    logger.info('   Event Date (Local): $eventDate');
+    logger.info('═══════════════════════════════════════════════════════════');
+    
     final now = DateTime.now();
+    final location = tz.local;
+    
+    // Convertir eventDate a TZDateTime
+    final tzEventDate = tz.TZDateTime.from(eventDate, location);
+    final tzNow = tz.TZDateTime.now(location);
+    
+    logger.info('⏰ Current time (Local): $now');
+    logger.info('⏰ Current time (TZ): $tzNow');
+    logger.info('⏰ Event time (TZ): $tzEventDate');
+    logger.info('⏰ Time difference: ${tzEventDate.difference(tzNow).inMinutes} minutes');
     
     // ==================================================================
     // NOTIFICACIÓN 1: X minutos ANTES del evento
     // ==================================================================
-    final reminderTime = eventDate.subtract(Duration(minutes: minutesBefore));
+    final tzReminderTime = tzEventDate.subtract(Duration(minutes: minutesBefore));
     
-    if (reminderTime.isAfter(now)) {
+    logger.info('📢 NOTIFICATION 1 (BEFORE):');
+    logger.info('   Scheduled for: $tzReminderTime');
+    logger.info('   Time until notification: ${tzReminderTime.difference(tzNow).inMinutes} minutes');
+    
+    if (tzReminderTime.isAfter(tzNow)) {
       try {
         final androidDetails = AndroidNotificationDetails(
           'event_reminder_before',
@@ -179,7 +208,7 @@ class NotificationService {
           notificationId,
           '⏰ Recordatorio',
           '"$title" comienza en $minutesBefore minutos',
-          tz.TZDateTime.from(reminderTime, tz.local),
+          tzReminderTime,
           notificationDetails,
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
           uiLocalNotificationDateInterpretation:
@@ -187,19 +216,26 @@ class NotificationService {
           payload: 'reminder_before:$eventId',
         );
         
-        logger.info('✅ NotificationService: Scheduled BEFORE reminder (ID: $notificationId) for event $eventId');
-        logger.info('   Time: $reminderTime ($minutesBefore minutes before event)');
+        logger.info('✅ NOTIFICATION 1 SCHEDULED SUCCESSFULLY');
+        logger.info('   ID: $notificationId');
+        logger.info('   Time: $tzReminderTime');
       } catch (e, stackTrace) {
-        logger.error('NotificationService: Error scheduling BEFORE notification', e, stackTrace);
+        logger.error('❌ ERROR SCHEDULING NOTIFICATION 1', e, stackTrace);
       }
     } else {
-      logger.warning('NotificationService: Reminder time ($reminderTime) is in the past, skipping BEFORE notification');
+      logger.warning('⚠️  SKIPPING NOTIFICATION 1: Time is in the past');
+      logger.warning('   Reminder time: $tzReminderTime');
+      logger.warning('   Current time: $tzNow');
     }
     
     // ==================================================================
     // NOTIFICACIÓN 2: CUANDO COMIENZA el evento
     // ==================================================================
-    if (eventDate.isAfter(now)) {
+    logger.info('📢 NOTIFICATION 2 (START):');
+    logger.info('   Scheduled for: $tzEventDate');
+    logger.info('   Time until notification: ${tzEventDate.difference(tzNow).inMinutes} minutes');
+    
+    if (tzEventDate.isAfter(tzNow)) {
       try {
         final androidDetails = AndroidNotificationDetails(
           'event_reminder_start',
@@ -227,7 +263,7 @@ class NotificationService {
           notificationId,
           '🔔 ¡Tu evento está comenzando!',
           '"$title" - ${_formatDateTime(eventDate)}',
-          tz.TZDateTime.from(eventDate, tz.local),
+          tzEventDate,
           notificationDetails,
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
           uiLocalNotificationDateInterpretation:
@@ -235,14 +271,19 @@ class NotificationService {
           payload: 'reminder_start:$eventId',
         );
         
-        logger.info('✅ NotificationService: Scheduled START reminder (ID: $notificationId) for event $eventId');
-        logger.info('   Time: $eventDate (exact event start time)');
+        logger.info('✅ NOTIFICATION 2 SCHEDULED SUCCESSFULLY');
+        logger.info('   ID: $notificationId');
+        logger.info('   Time: $tzEventDate');
       } catch (e, stackTrace) {
-        logger.error('NotificationService: Error scheduling START notification', e, stackTrace);
+        logger.error('❌ ERROR SCHEDULING NOTIFICATION 2', e, stackTrace);
       }
     } else {
-      logger.warning('NotificationService: Event time ($eventDate) is in the past, skipping START notification');
+      logger.warning('⚠️  SKIPPING NOTIFICATION 2: Time is in the past');
+      logger.warning('   Event time: $tzEventDate');
+      logger.warning('   Current time: $tzNow');
     }
+    
+    logger.info('═══════════════════════════════════════════════════════════');
     
     // Mostrar notificaciones pendientes para debugging
     await _logPendingNotifications();
@@ -259,6 +300,7 @@ class NotificationService {
       await _notifications.cancel(eventId * 10 + 1);
       
       logger.info('NotificationService: Cancelled both reminders for event $eventId');
+      await _logPendingNotifications();
     } catch (e, stackTrace) {
       logger.error('NotificationService: Error cancelling notifications', e, stackTrace);
     }
@@ -326,10 +368,22 @@ class NotificationService {
   Future<void> _logPendingNotifications() async {
     try {
       final pending = await _notifications.pendingNotificationRequests();
-      logger.info('📋 NotificationService: ${pending.length} pending notifications:');
-      for (var notification in pending) {
-        logger.info('   - ID: ${notification.id}, Title: ${notification.title}');
+      logger.info('📋 ═══════════════════════════════════════════════════════');
+      logger.info('📋 PENDING NOTIFICATIONS: ${pending.length}');
+      logger.info('📋 ═══════════════════════════════════════════════════════');
+      
+      if (pending.isEmpty) {
+        logger.info('📋 No pending notifications');
+      } else {
+        for (var notification in pending) {
+          logger.info('📋 - ID: ${notification.id}');
+          logger.info('📋   Title: ${notification.title}');
+          logger.info('📋   Body: ${notification.body}');
+          logger.info('📋   Payload: ${notification.payload}');
+          logger.info('📋   ───────────────────────────────────────────────');
+        }
       }
+      logger.info('📋 ═══════════════════════════════════════════════════════');
     } catch (e, stackTrace) {
       logger.error('NotificationService: Error getting pending notifications', e, stackTrace);
     }
@@ -390,6 +444,49 @@ class NotificationService {
       );
       
       logger.info('NotificationService: Test notification shown');
+    } catch (e, stackTrace) {
+      logger.error('NotificationService: Error showing test notification', e, stackTrace);
+    }
+  }
+  
+  /// Test de notificación programada en 10 segundos
+  Future<void> testScheduledNotification() async {
+    if (!_initialized) await initialize();
+    
+    try {
+      final location = tz.local;
+      final scheduledTime = tz.TZDateTime.now(location).add(const Duration(seconds: 10));
+      
+      logger.info('🧪 SCHEDULING TEST NOTIFICATION');
+      logger.info('   Current time: ${tz.TZDateTime.now(location)}');
+      logger.info('   Scheduled for: $scheduledTime');
+      logger.info('   Seconds until notification: 10');
+      
+      const androidDetails = AndroidNotificationDetails(
+        'test',
+        'Test Notifications',
+        channelDescription: 'Test notifications',
+        importance: Importance.max,
+        priority: Priority.high,
+        playSound: true,
+        enableVibration: true,
+      );
+      
+      const notificationDetails = NotificationDetails(android: androidDetails);
+      
+      await _notifications.zonedSchedule(
+        88888,
+        '🧪 Test Scheduled Notification',
+        'This notification was scheduled 10 seconds ago!',
+        scheduledTime,
+        notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+      
+      logger.info('✅ Test notification scheduled successfully');
+      await _logPendingNotifications();
     } catch (e, stackTrace) {
       logger.error('NotificationService: Error showing test notification', e, stackTrace);
     }

@@ -297,7 +297,8 @@ class EventsNotifier extends StateNotifier<EventsState> {
     );
   }
   
-  Future<bool> createEvent(String title, DateTime eventDate) async {
+  // MODIFICADO: Ahora retorna el evento creado
+  Future<Event?> createEvent(String title, DateTime eventDate) async {
     logger.info('[Events] Creating event: $title at $eventDate');
     
     final result = await _repository.createEvent(
@@ -308,13 +309,13 @@ class EventsNotifier extends StateNotifier<EventsState> {
       (failure) {
         logger.warning('[Events] Failed to create event: ${failure.message}');
         state = state.copyWith(error: _getFailureMessage(failure));
-        return false;
+        return null;
       },
       (event) {
         logger.info('[Events] Event created successfully: ${event.id}');
         loadEvents();
         loadUpcomingEvents();
-        return true;
+        return event;
       },
     );
   }

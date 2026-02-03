@@ -55,7 +55,6 @@ class VoiceCommandController extends StateNotifier<VoiceServiceState> {
   final NotificationService _notificationService = NotificationService();
   
   VoiceCommandController(this._repository) : super(const VoiceServiceState()) {
-    // Configurar callback de logs
     _voiceService.setLogCallback((message) {
       logger.debug('[VoiceController] $message');
     });
@@ -66,12 +65,10 @@ class VoiceCommandController extends StateNotifier<VoiceServiceState> {
     logger.info('VoiceController: Initializing services...');
     
     try {
-      // Inicializar notificaciones
       await _notificationService.initialize();
       await _notificationService.requestPermissions();
       logger.info('VoiceController: Notifications initialized');
       
-      // Inicializar reconocimiento de voz
       final initialized = await _voiceService.initialize();
       
       if (!initialized) {
@@ -97,15 +94,12 @@ class VoiceCommandController extends StateNotifier<VoiceServiceState> {
       return;
     }
     
-    // Limpiar errores previos
     state = state.clearError();
     
-    // Verificar permisos
     final hasPermissions = await _voiceService.hasPermissions();
     if (!hasPermissions) {
       logger.warning('VoiceController: No microphone permissions');
       
-      // Solicitar permisos
       final granted = await _voiceService.requestPermissions();
       if (!granted) {
         state = state.copyWith(
@@ -116,11 +110,9 @@ class VoiceCommandController extends StateNotifier<VoiceServiceState> {
     }
     
     try {
-      // Mostrar notificación de servicio activo
       await _notificationService.showVoiceServiceNotification();
       logger.debug('VoiceController: Voice notification shown');
       
-      // Iniciar escucha
       final started = await _voiceService.startListening(
         onCommandDetected: _handleVoiceCommand,
       );
@@ -179,7 +171,6 @@ class VoiceCommandController extends StateNotifier<VoiceServiceState> {
     );
     
     try {
-      // Crear el evento en el backend
       logger.debug('VoiceController: Creating event in backend...');
       final result = await _repository.createEvent(
         CreateEventRequest(
@@ -198,13 +189,12 @@ class VoiceCommandController extends StateNotifier<VoiceServiceState> {
             error: failure.message,
           );
           
-          // Notificar error
           await _notificationService.showEventCreatedNotification(
             title: '❌ Error: ${failure.message}',
             eventDate: command.eventDate,
           );
         },
-        // Éxito al crear
+        // ✅ Éxito al crear - AHORA CON ID CORRECTO
         (event) async {
           logger.info('VoiceController: Event created successfully: ${event.id}');
           
@@ -219,14 +209,15 @@ class VoiceCommandController extends StateNotifier<VoiceServiceState> {
             eventDate: event.eventDate,
           );
           
-          // Programar recordatorio 1 minuto antes
+          // ✅ PROGRAMAR NOTIFICACIONES CON EL ID CORRECTO DEL EVENTO
           await _notificationService.scheduleEventReminder(
             eventId: event.id,
             title: event.title,
             eventDate: event.eventDate,
+            minutesBefore: 5,
           );
           
-          logger.info('VoiceController: Reminder scheduled for event ${event.id}');
+          logger.info('VoiceController: Reminders scheduled for event ${event.id}');
         },
       );
     } catch (e, stackTrace) {
@@ -237,7 +228,7 @@ class VoiceCommandController extends StateNotifier<VoiceServiceState> {
         error: 'Error processing command: $e',
       );
       
-      // Notificar error
+      
       await _notificationService.showEventCreatedNotification(
         title: '❌ Error creating event',
         eventDate: command.eventDate,
