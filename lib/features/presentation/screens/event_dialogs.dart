@@ -22,7 +22,7 @@ class EventDialogs {
     );
   }
   
-  /// Mostrar detalles de un evento
+  /// Mostrar diálogo de detalles del evento con opción de editar
   static Future<void> showEventDetailsDialog(
     BuildContext context,
     WidgetRef ref,
@@ -33,6 +33,20 @@ class EventDialogs {
     await showDialog(
       context: context,
       builder: (context) => _EventDetailsDialog(event: event, ref: ref),
+    );
+  }
+  
+  /// Mostrar diálogo para EDITAR evento
+  static Future<void> showEditEventDialog(
+    BuildContext context,
+    WidgetRef ref,
+    Event event,
+  ) async {
+    if (!context.mounted) return;
+    
+    await showDialog(
+      context: context,
+      builder: (context) => _EditEventDialog(event: event),
     );
   }
   
@@ -80,7 +94,6 @@ class EventDialogs {
     );
     
     if (confirm == true) {
-      // Cancelar notificaciones
       final notificationService = NotificationService();
       await notificationService.cancelEventReminder(eventId);
       
@@ -251,17 +264,14 @@ class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
       return;
     }
     
-    // Guardar valores antes de la operación
     final title = titleController.text.trim();
     final eventDate = selectedDate;
     
-    // Marcar como creando
     setState(() {
       _isCreating = true;
     });
     
     try {
-      // ✅ CREAR EVENTO Y OBTENER EL OBJETO COMPLETO
       final newEvent = await ref.read(eventsProvider.notifier).createEvent(
         title,
         eventDate,
@@ -270,7 +280,6 @@ class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
       if (!context.mounted) return;
       
       if (newEvent != null) {
-        // ✅ PROGRAMAR NOTIFICACIÓN CON EL ID CORRECTO
         logger.info('[EventDialogs] Event created with ID: ${newEvent.id}');
         
         final notificationService = NotificationService();
@@ -281,16 +290,13 @@ class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
           minutesBefore: 5,
         );
         
-        // ✅ FORZAR RECARGA DE EVENTOS
         await ref.read(eventsProvider.notifier).loadEvents();
         await ref.read(eventsProvider.notifier).loadUpcomingEvents();
         
         if (!context.mounted) return;
         
-        // Cerrar el diálogo
         Navigator.pop(context);
         
-        // Mostrar mensaje de éxito
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('✅ Event created successfully'),
@@ -299,7 +305,6 @@ class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
           ),
         );
       } else {
-        // Error al crear
         setState(() {
           _isCreating = false;
         });
@@ -320,6 +325,238 @@ class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
       
       setState(() {
         _isCreating = false;
+      });
+      
+      if (!context.mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Error: $e'),
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+}
+
+// =============================================================================
+// DIÁLOGO DE EDITAR EVENTO
+// =============================================================================
+
+class _EditEventDialog extends ConsumerStatefulWidget {
+  final Event event;
+  
+  const _EditEventDialog({
+    required this.event,
+  });
+  
+  @override
+  ConsumerState<_EditEventDialog> createState() => _EditEventDialogState();
+}
+
+class _EditEventDialogState extends ConsumerState<_EditEventDialog> {
+  late DateTime selectedDate;
+  late TextEditingController titleController;
+  bool _isUpdating = false;
+  
+  @override
+  void initState() {
+    super.initState();
+    selectedDate = widget.event.eventDate;
+    titleController = TextEditingController(text: widget.event.title);
+  }
+  
+  @override
+  void dispose() {
+    titleController.dispose();
+    super.dispose();
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppColors.cardBackground,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: const Text('Edit Event', style: AppTextStyles.h3),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: titleController,
+              autofocus: true,
+              enabled: !_isUpdating,
+              style: AppTextStyles.body,
+              decoration: const InputDecoration(
+                labelText: 'Event Title',
+                hintText: 'Enter event title',
+                filled: true,
+                fillColor: AppColors.cardLightBackground,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(12)),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            const Text('Event Date & Time', style: AppTextStyles.bodySecondary),
+            const SizedBox(height: AppSpacing.sm),
+            InkWell(
+              onTap: _isUpdating ? null : () => _selectDateTime(context),
+              child: Container(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.textSecondary),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.calendar_today, color: AppColors.primary),
+                    const SizedBox(width: AppSpacing.md),
+                    Text(
+                      DateFormat('MMM dd, yyyy HH:mm').format(selectedDate),
+                      style: AppTextStyles.body,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isUpdating ? null : () => Navigator.pop(context),
+          child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+          ),
+          onPressed: _isUpdating ? null : () => _updateEvent(context),
+          child: _isUpdating
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Text('Save'),
+        ),
+      ],
+    );
+  }
+  
+  Future<void> _selectDateTime(BuildContext context) async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    
+    if (date != null && context.mounted) {
+      final time = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(selectedDate),
+      );
+      
+      if (time != null) {
+        setState(() {
+          selectedDate = DateTime(
+            date.year,
+            date.month,
+            date.day,
+            time.hour,
+            time.minute,
+          );
+        });
+      }
+    }
+  }
+  
+  Future<void> _updateEvent(BuildContext context) async {
+    if (titleController.text.trim().isEmpty) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter an event title'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+    
+    final title = titleController.text.trim();
+    final eventDate = selectedDate;
+    
+    setState(() {
+      _isUpdating = true;
+    });
+    
+    try {
+      final success = await ref.read(eventsProvider.notifier).updateEvent(
+        widget.event.id,
+        title,
+        eventDate,
+      );
+      
+      if (!context.mounted) return;
+      
+      if (success) {
+        logger.info('[EventDialogs] Event updated: ${widget.event.id}');
+        
+        // Cancelar notificaciones antiguas
+        final notificationService = NotificationService();
+        await notificationService.cancelEventReminder(widget.event.id);
+        
+        // Programar nuevas notificaciones
+        await notificationService.scheduleEventReminder(
+          eventId: widget.event.id,
+          title: title,
+          eventDate: eventDate,
+          minutesBefore: 5,
+        );
+        
+        await ref.read(eventsProvider.notifier).loadEvents();
+        await ref.read(eventsProvider.notifier).loadUpcomingEvents();
+        
+        if (!context.mounted) return;
+        
+        Navigator.pop(context);
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Event updated successfully'),
+            backgroundColor: AppColors.success,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        setState(() {
+          _isUpdating = false;
+        });
+        
+        if (!context.mounted) return;
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('❌ Failed to update event'),
+            backgroundColor: AppColors.error,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e, stackTrace) {
+      logger.error('[EventDialogs] Error updating event', e, stackTrace);
+      
+      setState(() {
+        _isUpdating = false;
       });
       
       if (!context.mounted) return;
@@ -378,6 +615,15 @@ class _EventDetailsDialog extends StatelessWidget {
         ],
       ),
       actions: [
+        // ✅ BOTÓN DE EDITAR
+        TextButton.icon(
+          onPressed: () {
+            Navigator.pop(context);
+            EventDialogs.showEditEventDialog(context, ref, event);
+          },
+          icon: const Icon(Icons.edit, color: AppColors.primary),
+          label: const Text('Edit', style: TextStyle(color: AppColors.primary)),
+        ),
         if (event.status == ReminderStatus.pending) ...[
           TextButton.icon(
             onPressed: () {
@@ -395,10 +641,6 @@ class _EventDetailsDialog extends StatelessWidget {
           },
           icon: const Icon(Icons.delete, color: AppColors.error),
           label: const Text('Delete', style: TextStyle(color: AppColors.error)),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
         ),
       ],
     );

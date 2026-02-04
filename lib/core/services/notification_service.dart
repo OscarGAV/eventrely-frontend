@@ -162,17 +162,11 @@ class NotificationService {
     logger.info('   Event Date (Local): $eventDate');
     logger.info('═══════════════════════════════════════════════════════════');
     
-    final now = DateTime.now();
     final location = tz.local;
     
     // Convertir eventDate a TZDateTime
     final tzEventDate = tz.TZDateTime.from(eventDate, location);
     final tzNow = tz.TZDateTime.now(location);
-    
-    logger.info('⏰ Current time (Local): $now');
-    logger.info('⏰ Current time (TZ): $tzNow');
-    logger.info('⏰ Event time (TZ): $tzEventDate');
-    logger.info('⏰ Time difference: ${tzEventDate.difference(tzNow).inMinutes} minutes');
     
     // ==================================================================
     // NOTIFICACIÓN 1: X minutos ANTES del evento
@@ -368,22 +362,22 @@ class NotificationService {
   Future<void> _logPendingNotifications() async {
     try {
       final pending = await _notifications.pendingNotificationRequests();
-      logger.info('📋 ═══════════════════════════════════════════════════════');
-      logger.info('📋 PENDING NOTIFICATIONS: ${pending.length}');
-      logger.info('📋 ═══════════════════════════════════════════════════════');
+      logger.info('═══════════════════════════════════════════════════════');
+      logger.info('PENDING NOTIFICATIONS: ${pending.length}');
+      logger.info('═══════════════════════════════════════════════════════');
       
       if (pending.isEmpty) {
-        logger.info('📋 No pending notifications');
+        logger.info('No pending notifications');
       } else {
         for (var notification in pending) {
-          logger.info('📋 - ID: ${notification.id}');
-          logger.info('📋   Title: ${notification.title}');
-          logger.info('📋   Body: ${notification.body}');
-          logger.info('📋   Payload: ${notification.payload}');
-          logger.info('📋   ───────────────────────────────────────────────');
+          logger.info('- ID: ${notification.id}');
+          logger.info('  Title: ${notification.title}');
+          logger.info('  Body: ${notification.body}');
+          logger.info('  Payload: ${notification.payload}');
+          logger.info('  ───────────────────────────────────────────────');
         }
       }
-      logger.info('📋 ═══════════════════════════════════════════════════════');
+      logger.info('═══════════════════════════════════════════════════════');
     } catch (e, stackTrace) {
       logger.error('NotificationService: Error getting pending notifications', e, stackTrace);
     }

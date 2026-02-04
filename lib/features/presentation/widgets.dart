@@ -37,22 +37,18 @@ class CustomCard extends StatelessWidget {
 }
 
 // ============================================================================
-// STAT CARD (for dashboard metrics)
+// STAT CARD (for dashboard metrics) - SIN PORCENTAJES
 // ============================================================================
 
 class StatCard extends StatelessWidget {
   final String title;
   final String value;
-  final String? percentage;
-  final bool isNegative;
   final IconData? icon;
   
   const StatCard({
     super.key,
     required this.title,
     required this.value,
-    this.percentage,
-    this.isNegative = false,
     this.icon,
   });
   
@@ -71,45 +67,7 @@ class StatCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(value, style: AppTextStyles.h2),
-              if (percentage != null) ...[
-                const SizedBox(width: AppSpacing.sm),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isNegative
-                        ? AppColors.error.withValues(alpha: 0.2)
-                        : AppColors.success.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        isNegative ? Icons.arrow_downward : Icons.arrow_upward,
-                        size: 12,
-                        color: isNegative ? AppColors.error : AppColors.success,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        percentage!,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isNegative ? AppColors.error : AppColors.success,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ],
-          ),
+          Text(value, style: AppTextStyles.h2),
         ],
       ),
     );
@@ -341,27 +299,21 @@ class EventCard extends StatelessWidget {
               ],
             ),
           ),
-          if (status == 'pending') ...[
+          if (status == 'pending' && onComplete != null) ...[
             IconButton(
               icon: const Icon(Icons.check_circle_outline),
               color: AppColors.success,
               onPressed: onComplete,
               tooltip: 'Complete',
             ),
+          ],
+          if (onDelete != null)
             IconButton(
               icon: const Icon(Icons.delete_outline),
               color: AppColors.error,
               onPressed: onDelete,
               tooltip: 'Delete',
             ),
-          ] else if (onTap != null) ...[
-            // Si el evento no es pending pero tiene onTap, mostrar icono de editar
-            const Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: AppColors.textSecondary,
-            ),
-          ],
         ],
       ),
     );

@@ -8,7 +8,9 @@ import '../widgets.dart';
 import 'event_dialogs.dart';
 
 class DashboardTab extends ConsumerWidget {
-  const DashboardTab({super.key});
+  final void Function(String filter)? onNavigateToEvents;
+  
+  const DashboardTab({super.key, this.onNavigateToEvents});
   
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -46,25 +48,12 @@ class DashboardTab extends ConsumerWidget {
   }
   
   Widget _buildHeader(AuthState authState) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Hi ${authState.user?.username ?? "User"}', style: AppTextStyles.h2),
-            const SizedBox(height: 4),
-            const Text('Here\'s your event overview', style: AppTextStyles.bodySecondary),
-          ],
-        ),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppColors.cardBackground,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(Icons.notifications_outlined, color: AppColors.primary),
-        ),
+        Text('Hi ${authState.user?.username ?? "User"}', style: AppTextStyles.h2),
+        const SizedBox(height: 4),
+        const Text('Here\'s your event overview', style: AppTextStyles.bodySecondary),
       ],
     );
   }
@@ -75,26 +64,38 @@ class DashboardTab extends ConsumerWidget {
     return Row(
       children: [
         Expanded(
-          child: StatCard(
-            title: 'Pending',
-            value: pendingCount.toString(),
-            icon: Icons.pending_actions,
+          child: InkWell(
+            onTap: () => onNavigateToEvents?.call('pending'),
+            borderRadius: BorderRadius.circular(20),
+            child: StatCard(
+              title: 'Pending',
+              value: pendingCount.toString(),
+              icon: Icons.pending_actions,
+            ),
           ),
         ),
         const SizedBox(width: AppSpacing.md),
         Expanded(
-          child: StatCard(
-            title: 'Completed',
-            value: completedCount.toString(),
-            icon: Icons.check_circle_outline,
+          child: InkWell(
+            onTap: () => onNavigateToEvents?.call('completed'),
+            borderRadius: BorderRadius.circular(20),
+            child: StatCard(
+              title: 'Completed',
+              value: completedCount.toString(),
+              icon: Icons.check_circle_outline,
+            ),
           ),
         ),
         const SizedBox(width: AppSpacing.md),
         Expanded(
-          child: StatCard(
-            title: 'This Month',
-            value: thisMonthCount.toString(),
-            icon: Icons.calendar_month,
+          child: InkWell(
+            onTap: () => onNavigateToEvents?.call('all'),
+            borderRadius: BorderRadius.circular(20),
+            child: StatCard(
+              title: 'This Month',
+              value: thisMonthCount.toString(),
+              icon: Icons.calendar_month,
+            ),
           ),
         ),
       ],
@@ -132,15 +133,15 @@ class DashboardTab extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text('Upcoming Events', style: AppTextStyles.h3),
-            TextButton.icon(
-              onPressed: () async {
-                await EventDialogs.showCreateEventDialog(ref.context);
-                await ref.read(eventsProvider.notifier).loadEvents();
-                await ref.read(eventsProvider.notifier).loadUpcomingEvents();
-              },
-              icon: const Icon(Icons.add, size: 20),
-              label: const Text('Add'),
-              style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+            Builder(
+              builder: (context) => TextButton.icon(
+                onPressed: () async {
+                  await EventDialogs.showCreateEventDialog(context);
+                },
+                icon: const Icon(Icons.add, size: 20),
+                label: const Text('Add'),
+                style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+              ),
             ),
           ],
         ),
@@ -161,14 +162,27 @@ class DashboardTab extends ConsumerWidget {
             ),
           )
         else
-          ...upcomingEvents.take(5).map((event) => Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                child: EventCard(
-                  title: event.title,
-                  date: event.eventDate,
-                  status: event.status.name,
-                  onComplete: () => EventDialogs.completeEvent(ref, event.id),
-                  onDelete: () => EventDialogs.deleteEvent(ref, event.id),
+          ...upcomingEvents.take(5).map((event) => Builder(
+                builder: (context) => Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                  child: EventCard(
+                    title: event.title,
+                    date: event.eventDate,
+                    status: event.status.name,
+                    onTap: () => EventDialogs.showEventDetailsDialog(context, ref, event),
+                    onComplete: event.status == ReminderStatus.pending
+                        ? () async {
+                            await EventDialogs.completeEvent(ref, event.id);
+                            await ref.read(eventsProvider.notifier).loadEvents();
+                            await ref.read(eventsProvider.notifier).loadUpcomingEvents();
+                          }
+                        : null,
+                    onDelete: () async {
+                      await EventDialogs.deleteEvent(ref, event.id);
+                      await ref.read(eventsProvider.notifier).loadEvents();
+                      await ref.read(eventsProvider.notifier).loadUpcomingEvents();
+                    },
+                  ),
                 ),
               )),
       ],
@@ -191,11 +205,12 @@ class _EventsBarChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final weekData = _getWeekData();
+    final maxValue = weekData.values.isEmpty ? 5.0 : weekData.values.reduce((a, b) => a > b ? a : b).toDouble();
     
     return BarChart(
       BarChartData(
         alignment: BarChartAlignment.spaceAround,
-        maxY: (weekData.values.reduce((a, b) => a > b ? a : b) + 2).toDouble(),
+        maxY: maxValue < 5 ? 5 : maxValue + 2,
         barTouchData: BarTouchData(enabled: false),
         titlesData: FlTitlesData(
           show: true,

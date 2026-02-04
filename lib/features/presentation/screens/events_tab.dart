@@ -7,14 +7,32 @@ import '../widgets.dart';
 import 'event_dialogs.dart';
 
 class EventsTab extends ConsumerStatefulWidget {
-  const EventsTab({super.key});
+  final String initialFilter;
+  
+  const EventsTab({super.key, this.initialFilter = 'all'});
   
   @override
   ConsumerState<EventsTab> createState() => _EventsTabState();
 }
 
 class _EventsTabState extends ConsumerState<EventsTab> {
-  String _selectedFilter = 'all';
+  late String _selectedFilter;
+  
+  @override
+  void initState() {
+    super.initState();
+    _selectedFilter = widget.initialFilter;
+  }
+  
+  @override
+  void didUpdateWidget(EventsTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialFilter != oldWidget.initialFilter) {
+      setState(() {
+        _selectedFilter = widget.initialFilter;
+      });
+    }
+  }
   
   @override
   Widget build(BuildContext context) {
@@ -55,8 +73,6 @@ class _EventsTabState extends ConsumerState<EventsTab> {
             icon: const Icon(Icons.add_circle, color: AppColors.primary, size: 32),
             onPressed: () async {
               await EventDialogs.showCreateEventDialog(context);
-              await ref.read(eventsProvider.notifier).loadEvents();
-              await ref.read(eventsProvider.notifier).loadUpcomingEvents();
             },
           ),
         ],
@@ -76,8 +92,6 @@ class _EventsTabState extends ConsumerState<EventsTab> {
           _buildFilterChip('pending', 'Pending', Icons.pending_actions),
           const SizedBox(width: AppSpacing.sm),
           _buildFilterChip('completed', 'Completed', Icons.check_circle),
-          const SizedBox(width: AppSpacing.sm),
-          _buildFilterChip('cancelled', 'Cancelled', Icons.cancel),
         ],
       ),
     );
@@ -120,9 +134,15 @@ class _EventsTabState extends ConsumerState<EventsTab> {
           status: event.status.name,
           onTap: () => EventDialogs.showEventDetailsDialog(context, ref, event),
           onComplete: event.status == ReminderStatus.pending
-              ? () => EventDialogs.completeEvent(ref, event.id)
+              ? () async {
+                  await EventDialogs.completeEvent(ref, event.id);
+                  await ref.read(eventsProvider.notifier).loadEvents();
+                }
               : null,
-          onDelete: () => EventDialogs.deleteEvent(ref, event.id),
+          onDelete: () async {
+            await EventDialogs.deleteEvent(ref, event.id);
+            await ref.read(eventsProvider.notifier).loadEvents();
+          },
         );
       },
     );
@@ -155,8 +175,6 @@ class _EventsTabState extends ConsumerState<EventsTab> {
         return 'No pending events';
       case 'completed':
         return 'No completed events';
-      case 'cancelled':
-        return 'No cancelled events';
       default:
         return 'No events yet';
     }
@@ -168,8 +186,6 @@ class _EventsTabState extends ConsumerState<EventsTab> {
         return events.where((e) => e.status == ReminderStatus.pending).toList();
       case 'completed':
         return events.where((e) => e.status == ReminderStatus.completed).toList();
-      case 'cancelled':
-        return events.where((e) => e.status == ReminderStatus.cancelled).toList();
       default:
         return events;
     }

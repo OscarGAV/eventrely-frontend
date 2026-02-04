@@ -21,6 +21,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   int _selectedIndex = 0;
   bool _permissionsRequested = false;
   
+  // ✅ Filtro para pasar a EventsTab
+  String _eventsFilter = 'all';
+  
   @override
   void initState() {
     super.initState();
@@ -133,16 +136,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     }
   }
   
+  // ✅ Método para navegar a Events tab con filtro
+  void _navigateToEvents(String filter) {
+    setState(() {
+      _selectedIndex = 1;
+      _eventsFilter = filter;
+    });
+  }
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
         child: IndexedStack(
           index: _selectedIndex,
-          children: const [
-            DashboardTab(),
-            EventsTab(),
-            ProfileScreen(),
+          children: [
+            DashboardTab(onNavigateToEvents: _navigateToEvents),
+            EventsTab(initialFilter: _eventsFilter),
+            const ProfileScreen(),
           ],
         ),
       ),
