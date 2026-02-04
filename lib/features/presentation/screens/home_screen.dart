@@ -21,7 +21,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   int _selectedIndex = 0;
   bool _permissionsRequested = false;
   
-  // ✅ Filtro para pasar a EventsTab
+  // Filtro para pasar a EventsTab
   String _eventsFilter = 'all';
   
   @override
@@ -136,7 +136,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     }
   }
   
-  // ✅ Método para navegar a Events tab con filtro
+  // Método para navegar a Events tab con filtro
   void _navigateToEvents(String filter) {
     setState(() {
       _selectedIndex = 1;

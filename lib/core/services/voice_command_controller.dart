@@ -190,11 +190,10 @@ class VoiceCommandController extends StateNotifier<VoiceServiceState> {
           );
           
           await _notificationService.showEventCreatedNotification(
-            title: '❌ Error: ${failure.message}',
+            title: 'Error: ${failure.message}',
             eventDate: command.eventDate,
           );
         },
-        // ✅ Éxito al crear - AHORA CON ID CORRECTO
         (event) async {
           logger.info('VoiceController: Event created successfully: ${event.id}');
           
@@ -209,7 +208,6 @@ class VoiceCommandController extends StateNotifier<VoiceServiceState> {
             eventDate: event.eventDate,
           );
           
-          // ✅ PROGRAMAR NOTIFICACIONES CON EL ID CORRECTO DEL EVENTO
           await _notificationService.scheduleEventReminder(
             eventId: event.id,
             title: event.title,
@@ -230,7 +228,7 @@ class VoiceCommandController extends StateNotifier<VoiceServiceState> {
       
       
       await _notificationService.showEventCreatedNotification(
-        title: '❌ Error creating event',
+        title: 'Error creating event',
         eventDate: command.eventDate,
       );
     }

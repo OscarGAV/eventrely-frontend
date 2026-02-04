@@ -56,7 +56,6 @@ class AppLogger {
 
   /// Método interno para escribir logs
   void _log(LogLevel level, String message, [dynamic error, StackTrace? stackTrace]) {
-    // En producción, solo mostrar warnings, errors y fatals
     if (_isProduction && level.index < LogLevel.warning.index) {
       return;
     }
@@ -69,17 +68,14 @@ class AppLogger {
     if (kDebugMode) {
       debugPrint('$emoji [$levelStr] $timestamp - $message');
       
-      // Agregar error si existe
       if (error != null) {
         debugPrint('  Error: $error');
       }
       
-      // Agregar stack trace si existe
       if (stackTrace != null) {
         debugPrint('  StackTrace: $stackTrace');
       }
     } else {
-      // En release, usar print estándar solo para logs importantes
       if (level.index >= LogLevel.warning.index) {
         debugPrint('$emoji [$levelStr] $message${error != null ? ' - Error: $error' : ''}');
       }
@@ -117,5 +113,4 @@ class AppLogger {
   }
 }
 
-/// Logger global para uso fácil
 final logger = AppLogger();

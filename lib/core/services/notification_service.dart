@@ -135,7 +135,7 @@ class NotificationService {
       
       await _notifications.show(
         DateTime.now().millisecondsSinceEpoch ~/ 1000, // ID único
-        '✅ Evento Creado',
+        'Evento Creado',
         '"$title" programado para $formattedDate',
         notificationDetails,
         payload: 'event_created:$title',
@@ -157,14 +157,12 @@ class NotificationService {
     if (!_initialized) await initialize();
     
     logger.info('═══════════════════════════════════════════════════════════');
-    logger.info('📅 SCHEDULING NOTIFICATIONS FOR EVENT $eventId');
+    logger.info('   SCHEDULING NOTIFICATIONS FOR EVENT $eventId');
     logger.info('   Title: "$title"');
     logger.info('   Event Date (Local): $eventDate');
     logger.info('═══════════════════════════════════════════════════════════');
     
     final location = tz.local;
-    
-    // Convertir eventDate a TZDateTime
     final tzEventDate = tz.TZDateTime.from(eventDate, location);
     final tzNow = tz.TZDateTime.now(location);
     
@@ -173,9 +171,9 @@ class NotificationService {
     // ==================================================================
     final tzReminderTime = tzEventDate.subtract(Duration(minutes: minutesBefore));
     
-    logger.info('📢 NOTIFICATION 1 (BEFORE):');
-    logger.info('   Scheduled for: $tzReminderTime');
-    logger.info('   Time until notification: ${tzReminderTime.difference(tzNow).inMinutes} minutes');
+    logger.info('NOTIFICATION 1 (BEFORE):');
+    logger.info('Scheduled for: $tzReminderTime');
+    logger.info('Time until notification: ${tzReminderTime.difference(tzNow).inMinutes} minutes');
     
     if (tzReminderTime.isAfter(tzNow)) {
       try {
@@ -200,7 +198,7 @@ class NotificationService {
         
         await _notifications.zonedSchedule(
           notificationId,
-          '⏰ Recordatorio',
+          '// Recordatorio',
           '"$title" comienza en $minutesBefore minutos',
           tzReminderTime,
           notificationDetails,
@@ -210,14 +208,14 @@ class NotificationService {
           payload: 'reminder_before:$eventId',
         );
         
-        logger.info('✅ NOTIFICATION 1 SCHEDULED SUCCESSFULLY');
+        logger.info('// NOTIFICATION 1 SCHEDULED SUCCESSFULLY');
         logger.info('   ID: $notificationId');
         logger.info('   Time: $tzReminderTime');
       } catch (e, stackTrace) {
-        logger.error('❌ ERROR SCHEDULING NOTIFICATION 1', e, stackTrace);
+        logger.error('// ERROR SCHEDULING NOTIFICATION 1', e, stackTrace);
       }
     } else {
-      logger.warning('⚠️  SKIPPING NOTIFICATION 1: Time is in the past');
+      logger.warning('// SKIPPING NOTIFICATION 1: Time is in the past');
       logger.warning('   Reminder time: $tzReminderTime');
       logger.warning('   Current time: $tzNow');
     }
@@ -225,9 +223,9 @@ class NotificationService {
     // ==================================================================
     // NOTIFICACIÓN 2: CUANDO COMIENZA el evento
     // ==================================================================
-    logger.info('📢 NOTIFICATION 2 (START):');
-    logger.info('   Scheduled for: $tzEventDate');
-    logger.info('   Time until notification: ${tzEventDate.difference(tzNow).inMinutes} minutes');
+    logger.info('NOTIFICATION 2 (START):');
+    logger.info('Scheduled for: $tzEventDate');
+    logger.info('Time until notification: ${tzEventDate.difference(tzNow).inMinutes} minutes');
     
     if (tzEventDate.isAfter(tzNow)) {
       try {
@@ -255,7 +253,7 @@ class NotificationService {
         
         await _notifications.zonedSchedule(
           notificationId,
-          '🔔 ¡Tu evento está comenzando!',
+          '// ¡Tu evento está comenzando!',
           '"$title" - ${_formatDateTime(eventDate)}',
           tzEventDate,
           notificationDetails,
@@ -265,14 +263,14 @@ class NotificationService {
           payload: 'reminder_start:$eventId',
         );
         
-        logger.info('✅ NOTIFICATION 2 SCHEDULED SUCCESSFULLY');
+        logger.info('// NOTIFICATION 2 SCHEDULED SUCCESSFULLY');
         logger.info('   ID: $notificationId');
         logger.info('   Time: $tzEventDate');
       } catch (e, stackTrace) {
-        logger.error('❌ ERROR SCHEDULING NOTIFICATION 2', e, stackTrace);
+        logger.error('// ERROR SCHEDULING NOTIFICATION 2', e, stackTrace);
       }
     } else {
-      logger.warning('⚠️  SKIPPING NOTIFICATION 2: Time is in the past');
+      logger.warning('// SKIPPING NOTIFICATION 2: Time is in the past');
       logger.warning('   Event time: $tzEventDate');
       logger.warning('   Current time: $tzNow');
     }
@@ -370,10 +368,10 @@ class NotificationService {
         logger.info('No pending notifications');
       } else {
         for (var notification in pending) {
-          logger.info('- ID: ${notification.id}');
-          logger.info('  Title: ${notification.title}');
-          logger.info('  Body: ${notification.body}');
-          logger.info('  Payload: ${notification.payload}');
+          logger.info('||ID: ${notification.id}');
+          logger.info('||Title: ${notification.title}');
+          logger.info('||Body: ${notification.body}');
+          logger.info('||Payload: ${notification.payload}');
           logger.info('  ───────────────────────────────────────────────');
         }
       }
@@ -451,7 +449,7 @@ class NotificationService {
       final location = tz.local;
       final scheduledTime = tz.TZDateTime.now(location).add(const Duration(seconds: 10));
       
-      logger.info('🧪 SCHEDULING TEST NOTIFICATION');
+      logger.info('// SCHEDULING TEST NOTIFICATION');
       logger.info('   Current time: ${tz.TZDateTime.now(location)}');
       logger.info('   Scheduled for: $scheduledTime');
       logger.info('   Seconds until notification: 10');
@@ -470,7 +468,7 @@ class NotificationService {
       
       await _notifications.zonedSchedule(
         88888,
-        '🧪 Test Scheduled Notification',
+        '// Test Scheduled Notification',
         'This notification was scheduled 10 seconds ago!',
         scheduledTime,
         notificationDetails,
@@ -479,7 +477,7 @@ class NotificationService {
             UILocalNotificationDateInterpretation.absoluteTime,
       );
       
-      logger.info('✅ Test notification scheduled successfully');
+      logger.info('// Test notification scheduled successfully');
       await _logPendingNotifications();
     } catch (e, stackTrace) {
       logger.error('NotificationService: Error showing test notification', e, stackTrace);

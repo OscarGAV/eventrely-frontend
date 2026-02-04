@@ -57,7 +57,7 @@ class EventDialogs {
     if (success && ref.context.mounted) {
       ScaffoldMessenger.of(ref.context).showSnackBar(
         const SnackBar(
-          content: Text('✅ Event marked as completed'),
+          content: Text('Event marked as completed'),
           backgroundColor: AppColors.success,
           duration: Duration(seconds: 2),
         ),
@@ -102,7 +102,7 @@ class EventDialogs {
       if (success && ref.context.mounted) {
         ScaffoldMessenger.of(ref.context).showSnackBar(
           const SnackBar(
-            content: Text('🗑️ Event deleted'),
+            content: Text('Event deleted'),
             backgroundColor: AppColors.error,
             duration: Duration(seconds: 2),
           ),
@@ -299,7 +299,7 @@ class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
         
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('✅ Event created successfully'),
+            content: Text('Event created successfully'),
             backgroundColor: AppColors.success,
             duration: Duration(seconds: 2),
           ),
@@ -314,7 +314,7 @@ class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
         final errorMessage = ref.read(eventsProvider).error ?? 'Failed to create event';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('❌ $errorMessage'),
+            content: Text('Error: $errorMessage'),
             backgroundColor: AppColors.error,
             duration: const Duration(seconds: 3),
           ),
@@ -331,7 +331,7 @@ class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('❌ Error: $e'),
+          content: Text('Error: $e'),
           backgroundColor: AppColors.error,
           duration: const Duration(seconds: 3),
         ),
@@ -532,7 +532,7 @@ class _EditEventDialogState extends ConsumerState<_EditEventDialog> {
         
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('✅ Event updated successfully'),
+            content: Text('Event updated successfully'),
             backgroundColor: AppColors.success,
             duration: Duration(seconds: 2),
           ),
@@ -546,7 +546,7 @@ class _EditEventDialogState extends ConsumerState<_EditEventDialog> {
         
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('❌ Failed to update event'),
+            content: Text('Failed to update event'),
             backgroundColor: AppColors.error,
             duration: Duration(seconds: 3),
           ),
@@ -563,7 +563,7 @@ class _EditEventDialogState extends ConsumerState<_EditEventDialog> {
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('❌ Error: $e'),
+          content: Text('Error: $e'),
           backgroundColor: AppColors.error,
           duration: const Duration(seconds: 3),
         ),
@@ -615,7 +615,7 @@ class _EventDetailsDialog extends StatelessWidget {
         ],
       ),
       actions: [
-        // ✅ BOTÓN DE EDITAR
+        // BOTÓN DE EDITAR
         TextButton.icon(
           onPressed: () {
             Navigator.pop(context);

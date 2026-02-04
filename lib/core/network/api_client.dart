@@ -35,10 +35,9 @@ class ApiClient {
         },
         onError: (error, handler) async {
           if (error.response?.statusCode == 401) {
-            // Try to refresh token
+            // Refresh token
             final refreshed = await _refreshAccessToken();
             if (refreshed) {
-              // Retry original request
               final opts = error.requestOptions;
               final token = await getAccessToken();
               opts.headers['Authorization'] = 'Bearer $token';

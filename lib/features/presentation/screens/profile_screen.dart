@@ -143,8 +143,8 @@ class ProfileScreen extends ConsumerWidget {
                               SnackBar(
                                 content: Text(
                                   voiceState.isActive 
-                                    ? '🔇 Voice service disabled' 
-                                    : '🎤 Voice service enabled'
+                                    ? 'Voice service disabled' 
+                                    : 'Voice service enabled'
                                 ),
                                 backgroundColor: !voiceState.isActive 
                                   ? AppColors.success 

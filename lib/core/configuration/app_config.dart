@@ -7,7 +7,7 @@ class AppConfig {
   static const Duration apiTimeout = Duration(seconds: 30);
 }
 
-// App Colors (based on the design image)
+// App Colors
 class AppColors {
   static const Color primary = Color(0xFFFF5722); // Orange
   static const Color primaryDark = Color(0xFFE64A19);

@@ -37,7 +37,7 @@ class CustomCard extends StatelessWidget {
 }
 
 // ============================================================================
-// STAT CARD (for dashboard metrics) - SIN PORCENTAJES
+// STAT CARD (for dashboard metrics)
 // ============================================================================
 
 class StatCard extends StatelessWidget {
@@ -55,19 +55,43 @@ class StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CustomCard(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.md,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(title, style: AppTextStyles.bodySecondary),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
               if (icon != null)
-                Icon(icon, color: AppColors.textSecondary, size: 20),
+                Icon(icon, color: AppColors.textSecondary, size: 18),
             ],
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(value, style: AppTextStyles.h2),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            value,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
@@ -205,7 +229,7 @@ class CustomTextField extends StatelessWidget {
 }
 
 // ============================================================================
-// EVENT CARD - CON SOPORTE PARA onTap
+// EVENT CARD (WITH STATUS INDICATOR AND CALL TO ACTIONS FOR EVENTS SCREEN)
 // ============================================================================
 
 class EventCard extends StatelessWidget {

@@ -131,7 +131,7 @@ class Repository {
   }
   
   // ============================================================================
-  // ERROR HANDLING - COMPLETAMENTE CORREGIDO
+  // ERROR HANDLING
   // ============================================================================
   
   Failure _handleError(DioException error) {
@@ -185,11 +185,10 @@ class Repository {
           message = responseData?.toString() ?? 'Unknown error';
         }
       } catch (e) {
-        // Si falla la extracción, usar mensaje por defecto según código
         message = _getDefaultMessageForStatusCode(statusCode);
       }
       
-      // Retornar el tipo de fallo apropiado
+      // Retornar el tipo de fallo
       switch (statusCode) {
         case 400:
           return ValidationFailure(message);
@@ -204,7 +203,6 @@ class Repository {
       }
     }
     
-    // Si no hay respuesta, usar el mensaje del error de Dio
     String errorMessage = 'Unknown error';
     try {
       if (error.message != null) {
