@@ -11,12 +11,6 @@
 - Autenticación simple y segura con JWT
 - Disponibilidad para programar eventos mediante comandos de voz
 
-**Prototipo:**
-
-`event-reminder-v0.1.0-arm64-v8a.apk`
-
-[![Download arm64-v8a](https://img.shields.io/badge/Download-ARM64--v8a%20(18.6MB)-blue?style=for-the-badge&logo=android)](https://github.com/OscarGAV/eventrely-frontend/releases/latest/download/event-reminder-v0.1.0-arm64-v8a.apk)
-
 **Screens:**
 
 `Installation`
