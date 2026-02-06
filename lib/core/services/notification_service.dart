@@ -198,7 +198,7 @@ class NotificationService {
         
         await _notifications.zonedSchedule(
           notificationId,
-          '// Recordatorio',
+          'Recordatorio',
           '"$title" comienza en $minutesBefore minutos',
           tzReminderTime,
           notificationDetails,
@@ -253,7 +253,7 @@ class NotificationService {
         
         await _notifications.zonedSchedule(
           notificationId,
-          '// ¡Tu evento está comenzando!',
+          '¡Tu evento está comenzando!',
           '"$title" - ${_formatDateTime(eventDate)}',
           tzEventDate,
           notificationDetails,
@@ -408,79 +408,6 @@ class NotificationService {
       return 'mañana a las $time';
     } else {
       return '${dateTime.day}/${dateTime.month}/${dateTime.year} a las $time';
-    }
-  }
-  
-  /// Test de notificación inmediata (para debugging)
-  Future<void> testNotification() async {
-    if (!_initialized) await initialize();
-    
-    try {
-      const androidDetails = AndroidNotificationDetails(
-        'test',
-        'Test Notifications',
-        channelDescription: 'Test notifications',
-        importance: Importance.max,
-        priority: Priority.high,
-        playSound: true,
-        enableVibration: true,
-      );
-      
-      const notificationDetails = NotificationDetails(android: androidDetails);
-      
-      await _notifications.show(
-        99999,
-        'Test Notification',
-        'If you see this, notifications are working!',
-        notificationDetails,
-      );
-      
-      logger.info('NotificationService: Test notification shown');
-    } catch (e, stackTrace) {
-      logger.error('NotificationService: Error showing test notification', e, stackTrace);
-    }
-  }
-  
-  /// Test de notificación programada en 10 segundos
-  Future<void> testScheduledNotification() async {
-    if (!_initialized) await initialize();
-    
-    try {
-      final location = tz.local;
-      final scheduledTime = tz.TZDateTime.now(location).add(const Duration(seconds: 10));
-      
-      logger.info('// SCHEDULING TEST NOTIFICATION');
-      logger.info('   Current time: ${tz.TZDateTime.now(location)}');
-      logger.info('   Scheduled for: $scheduledTime');
-      logger.info('   Seconds until notification: 10');
-      
-      const androidDetails = AndroidNotificationDetails(
-        'test',
-        'Test Notifications',
-        channelDescription: 'Test notifications',
-        importance: Importance.max,
-        priority: Priority.high,
-        playSound: true,
-        enableVibration: true,
-      );
-      
-      const notificationDetails = NotificationDetails(android: androidDetails);
-      
-      await _notifications.zonedSchedule(
-        88888,
-        '// Test Scheduled Notification',
-        'This notification was scheduled 10 seconds ago!',
-        scheduledTime,
-        notificationDetails,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
-      );
-      
-      logger.info('// Test notification scheduled successfully');
-      await _logPendingNotifications();
-    } catch (e, stackTrace) {
-      logger.error('NotificationService: Error showing test notification', e, stackTrace);
     }
   }
 }
